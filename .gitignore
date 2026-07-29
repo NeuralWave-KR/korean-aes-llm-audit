@@ -1,0 +1,16 @@
+# --- generated verification outputs (do not commit) ---
+outputs/
+
+# --- AI-Hub-derived data: NOT redistributable (see README "Data") ---
+# raw essays, per-rater labels, splits (contain essay text), and GPT-4o ratings
+# are all derived from the AI-Hub dataset and must be obtained under its terms.
+data/raw/
+data/splits/
+data/gpt4o_ratings/
+
+# --- python / env ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
