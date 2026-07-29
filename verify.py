@@ -46,6 +46,11 @@ def main():
     add("E10 H2 CI low", -0.023, float(h("H2")["ci_low"]), CI_TOL)
     add("E10 H2 CI high", 0.032, float(h("H2")["ci_high"]), CI_TOL)
     add("E10 H3 (nonlinearity) ΔQWK", 0.139, float(h("H3")["delta"]))
+    cells = pd.read_csv(os.path.join(OUT, "e10_factorial", "e10_cells.csv"))
+    cd = cells[(cells["category"] == "total") & (cells["model"] == "xgboost")
+               & (cells["A_grade"] == 0) & (cells["B_text"] == 0)
+               & (cells["C_llm_main"] == 1) & (cells["D_llm_sub"] == 1)].iloc[0]
+    add("E10 LLM-only (C·D) total QWK", 0.243, float(cd["qwk"]))
 
     # --- E11: representative score (Table 5) ---
     e11 = json.load(open(os.path.join(OUT, "e11_honest_eval", "e11_summary.json"),
