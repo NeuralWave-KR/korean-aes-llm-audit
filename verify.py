@@ -31,6 +31,10 @@ def main():
     add("E9 human ceiling total QWK", 0.584, float(tot["qwk"]))
     add("E9 ceiling CI low", 0.528, float(tot["ci_low"]), CI_TOL)
     add("E9 ceiling CI high", 0.630, float(tot["ci_high"]), CI_TOL)
+    pw = pd.read_csv(os.path.join(OUT, "e9_human_ceiling", "e9_pairwise.csv"))
+    pwt = pw[(pw["scope"] == "test") & (pw["label_definition"] == "corrected")
+             & (pw["axis_value"] == "total")].iloc[0]
+    add("E9 pairwise ceiling total QWK", 0.541, float(pwt["qwk"]))
 
     # --- E10: factorial hypotheses (Table 4) ---
     hyp = pd.read_csv(os.path.join(OUT, "e10_factorial", "e10_hypotheses.csv"))
