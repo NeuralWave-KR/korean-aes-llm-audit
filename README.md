@@ -14,10 +14,12 @@ time.
 | Stage (`src/`)          | Outputs (`outputs/`)     | Paper                                   |
 |-------------------------|--------------------------|-----------------------------------------|
 | `e09_human_ceiling.py`  | `e9_human_ceiling/`      | Tables 1–2 · human ceiling QWK **0.584** |
-| `e10_factorial.py`      | `e10_factorial/`         | Tables 3–4 · H2 (LLM increment) **+0.005 [−0.023, +0.032]** |
+| `e10_factorial.py`      | `e10_factorial/`         | Tables 3–4 · H2 (LLM increment) **+0.005 [−0.023, +0.032]**; Bonferroni 98.75% CIs (M=4) |
 | `e7l_original.py`       | `e7l_original/`          | Audited original pipeline · **0.625** (test-selected) |
 | `e11_honest_eval.py`    | `e11_honest_eval/`       | Table 5 · representative QWK **0.581** |
 | `tables_6_7.py`         | `tables_6_7/`            | Table 6 (per-grade + CI) · Table 7 (gap decomposition) |
+| `e9b_grade_variance.py` | `e9b_grade_variance/`    | §5.4 · per-grade score SD vs QWK: Spearman ρ **0.94** (ceiling), **0.71** (model) |
+| `e12_pilot_latest_model.py` | `e12_pilot/`         | §5.4 · supplementary latest-model pilot (GPT-5.6): expert-agreement r **0.18** < length **0.48** |
 
 `verify.py` checks each regenerated number against the value reported in the
 paper and exits non-zero on any mismatch.
@@ -32,10 +34,13 @@ src/
   e7l_original.py          the audited pipeline, test-selected post-processing (0.625 arm)
   e11_honest_eval.py       same model, validation-based selection (0.581 representative score)
   tables_6_7.py            per-grade CIs + 0.625->0.581 label-vs-protocol decomposition
+  e9b_grade_variance.py    per-grade score SD vs QWK (Spearman), explains per-grade instability (§5.4)
+  e12_pilot_latest_model.py  supplementary: latest-model (GPT-5.6) pilot, balanced sub-sample (§5.4)
   preprocessing/
     prompts.py             the exact GPT-4o scoring prompt
     openai_rater.py        the GPT-4o rating client (temperature 0, seed 42, gpt-4o-2024-08-06)
-run_all.py                 run all five stages in order
+    pilot_rater.py         the GPT-5.6 pilot rating client (same prompt/schema; temperature 1 — see below)
+run_all.py                 run all six stages in order
 verify.py                  assert regenerated outputs == reported values
 requirements.txt
 data/                      (git-ignored — see "Data" below)
@@ -49,6 +54,7 @@ The analysis reads two cached inputs, plus the raw archive for the human ceiling
 - `data/splits/{train,val,test}.csv` — essays + averaged expert scores (5,240 essays; 3,668 / 786 / 786).
 - `data/gpt4o_ratings/{train,val,test}_gpt4o_ratings.csv` — cached GPT-4o ratings.
 - `data/raw/aihub-essay/**/ *글짓기.zip` — raw AI-Hub labels with **per-rater** scores, required only by `e09_human_ceiling.py`.
+- `data/pilot_ratings/{pilot_ratings,pilot_sample}.csv` — cached GPT-5.6 pilot ratings and the balanced sub-sample, required only by the supplementary `e12_pilot_latest_model.py` (see "Supplementary: latest-model pilot").
 
 **These files are not distributed here.** They are derived from the AI-Hub
 dataset *"에세이 글 평가 데이터"* (`dataSetSn=545`), whose terms do not permit
@@ -106,6 +112,36 @@ seeds `11`/`42`). Point estimates are deterministic; bootstrap CIs are
 reproducible bit-for-bit given the same seed and package versions. Minor
 last-digit differences can arise only from BLAS/thread nondeterminism in XGBoost
 on a different CPU.
+
+## Supplementary: latest-model pilot (§5.4)
+
+To check whether the H2 finding (surface features dominate; no *detectable* LLM
+increment) is specific to GPT-4o, a balanced sub-sample of the test set was
+re-scored with a recent model (**GPT-5.6**, id `gpt-5.6-sol`) using the *same*
+0-3 prompt and JSON schema as the GPT-4o rater — only the model changed.
+
+- **Sub-sample**: 25 essays per grade × 6 grades = **150** (of 786), drawn per
+  grade with a fixed seed (`random_state=42`); re-running yields the identical
+  sample. Sub-sample id-SHA `4d54fb1e…`, cached-ratings SHA `3d5db8ae…`.
+- **Result** (`src/e12_pilot_latest_model.py`, offline): on this sub-sample the
+  latest-model total agrees with the expert total at Pearson **0.175**, below a
+  trivial length feature (log word count, **0.483**) and not above GPT-4o
+  (**0.197**) — the same ordering the paper reports for GPT-4o.
+- **Caveats** (as stated in §5.4): a *balanced* sub-sample, so absolute QWK is
+  not comparable to the headline numbers — only the within-sample ordering is; a
+  single recent model; and GPT-5.6 does not support `temperature=0`, so scoring
+  runs at temperature 1 (not fully deterministic). The cached ratings are the
+  fixed reference for the offline analysis; regeneration may differ slightly.
+
+The analysis stage reads only cached data and self-skips if the pilot ratings
+are absent, so it does not affect the core Tables 1–7 reproduction. To regenerate
+the ratings (needs `OPENAI_API_KEY`; incurs API cost, and is non-deterministic
+per the caveat above):
+
+```bash
+pip install openai
+python src/preprocessing/pilot_rater.py --model gpt-5.6-sol --n-per-grade 25
+```
 
 ## License
 

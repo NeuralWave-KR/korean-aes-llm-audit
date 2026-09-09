@@ -296,6 +296,22 @@ def main():
                  "supported": bool(d3["excludes_zero"] and d3["delta"] > 0)}
     print(f"    H3         Δ={d3['delta']:+.4f} [{d3['ci_low']:+.4f}, {d3['ci_high']:+.4f}]")
 
+    # ---------- 다중성 보정 (Bonferroni; 핵심 가설 M=4) ----------
+    # 동일 부트스트랩(boot_idx)에서 백분위만 넓게(98.75%) 재산출 — 추가 실험 없음.
+    M_TESTS = 4
+    BONF_LEVEL = 1 - 0.05 / M_TESTS          # 0.9875 (family alpha = 0.05)
+    C16r = cid_for(True, True, True, True, "ridge")
+    bonf_pairs = {"H1": (C16, "gpt4o_raw_linear"), "H2": (C16, C6),
+                  "H2b": (C16, C12), "H3": (C16, C16r)}
+    bonf = {}
+    print(f"\n  Bonferroni 보정 CI (M={M_TESTS}, level={BONF_LEVEL})")
+    for hid, (pa, pb) in bonf_pairs.items():
+        b = boot_delta_ci(y_va["total"], preds[(pa, "total")], preds[(pb, "total")],
+                          boot_idx, level=BONF_LEVEL)
+        bonf[hid] = b
+        print(f"    {hid:10s} Bonf Δ={b['delta']:+.4f} [{b['ci_low']:+.4f}, {b['ci_high']:+.4f}] "
+              f"{'0 배제' if b['excludes_zero'] else '0 포함'}")
+
     # 진단: 예측값 상관
     pc = float(np.corrcoef(preds[(C6, "total")], preds[(C16, "total")])[0, 1])
     print(f"\n  진단: pred_corr(LLM없음, 전체) = {pc:.4f}")
@@ -317,18 +333,28 @@ def main():
     for hid, h in hyp.items():
         if "by_category" in h:
             for cat, r in h["by_category"].items():
-                hyp_rows.append({"hypothesis_id": hid, "definition": h["definition"],
-                                 "category": cat, **r,
-                                 "supported": h.get("supported"),
-                                 "effect_size_band": h.get("effect_size_band")})
+                row = {"hypothesis_id": hid, "definition": h["definition"],
+                       "category": cat, **r,
+                       "supported": h.get("supported"),
+                       "effect_size_band": h.get("effect_size_band")}
+                if hid in bonf and cat == "total":
+                    row["bonf_level"] = BONF_LEVEL
+                    row["bonf_ci_low"] = bonf[hid]["ci_low"]
+                    row["bonf_ci_high"] = bonf[hid]["ci_high"]
+                hyp_rows.append(row)
         else:
-            hyp_rows.append({"hypothesis_id": hid, "definition": h["definition"],
-                             "category": "total",
-                             "delta": h.get("value", h.get("delta")),
-                             "ci_low": h.get("ci_low"), "ci_high": h.get("ci_high"),
-                             "excludes_zero": h.get("excludes_zero"),
-                             "supported": h.get("supported"),
-                             "effect_size_band": None})
+            row = {"hypothesis_id": hid, "definition": h["definition"],
+                   "category": "total",
+                   "delta": h.get("value", h.get("delta")),
+                   "ci_low": h.get("ci_low"), "ci_high": h.get("ci_high"),
+                   "excludes_zero": h.get("excludes_zero"),
+                   "supported": h.get("supported"),
+                   "effect_size_band": None}
+            if hid in bonf:
+                row["bonf_level"] = BONF_LEVEL
+                row["bonf_ci_low"] = bonf[hid]["ci_low"]
+                row["bonf_ci_high"] = bonf[hid]["ci_high"]
+            hyp_rows.append(row)
     pd.DataFrame(hyp_rows).to_csv(os.path.join(OUTPUT_DIR, "e10_hypotheses.csv"), index=False)
 
     ref_rows = [{"model": k, "n_features": v["n_features"], "category": cat, **v["val"][cat]}

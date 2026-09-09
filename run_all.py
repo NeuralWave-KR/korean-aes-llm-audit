@@ -7,6 +7,9 @@ Runs, in dependency order:
   3. e7l_original        -> outputs/e7l_original/         (audited original pipeline; 0.625 arm)
   4. e11_honest_eval     -> outputs/e11_honest_eval/      (representative score 0.581, Table 5)
   5. tables_6_7          -> outputs/tables_6_7/           (Tables 6,7; needs 1,3,4)
+  6. e9b_grade_variance  -> outputs/e9b_grade_variance/   (§5.4: per-grade score SD vs QWK; needs 5)
+  7. e12_pilot_latest_model -> outputs/e12_pilot/         (supplementary: latest-model pilot, §5.4;
+                                                           self-skips if pilot ratings absent)
 
 No network / no API calls: every stage reads only the local cached data.
 Then run `python verify.py` to check the outputs against the reported values.
@@ -19,7 +22,8 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "src")
 STAGES = ["e09_human_ceiling", "e10_factorial", "e7l_original",
-          "e11_honest_eval", "tables_6_7"]
+          "e11_honest_eval", "tables_6_7", "e9b_grade_variance",
+          "e12_pilot_latest_model"]
 
 
 def main():
