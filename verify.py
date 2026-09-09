@@ -52,6 +52,16 @@ def main():
                & (cells["C_llm_main"] == 1) & (cells["D_llm_sub"] == 1)].iloc[0]
     add("E10 LLM-only (C·D) total QWK", 0.243, float(cd["qwk"]))
 
+    # --- E10 Bonferroni 98.75% CIs (Table 4, multiplicity correction, M=4) ---
+    add("E10 H1 Bonferroni CI low", 0.120, float(h("H1")["bonf_ci_low"]), CI_TOL)
+    add("E10 H1 Bonferroni CI high", 0.350, float(h("H1")["bonf_ci_high"]), CI_TOL)
+    add("E10 H2 Bonferroni CI low", -0.033, float(h("H2")["bonf_ci_low"]), CI_TOL)
+    add("E10 H2 Bonferroni CI high", 0.041, float(h("H2")["bonf_ci_high"]), CI_TOL)
+    add("E10 H2b Bonferroni CI low", -0.037, float(h("H2b")["bonf_ci_low"]), CI_TOL)
+    add("E10 H2b Bonferroni CI high", 0.013, float(h("H2b")["bonf_ci_high"]), CI_TOL)
+    add("E10 H3 Bonferroni CI low", 0.048, float(h("H3")["bonf_ci_low"]), CI_TOL)
+    add("E10 H3 Bonferroni CI high", 0.224, float(h("H3")["bonf_ci_high"]), CI_TOL)
+
     # --- E11: representative score (Table 5) ---
     e11 = json.load(open(os.path.join(OUT, "e11_honest_eval", "e11_summary.json"),
                          encoding="utf-8"))
@@ -72,6 +82,24 @@ def main():
     add("Table7 original/corrected", 0.591, float(orig["corrected_qwk"]))
     add("Table7 thiswork/legacy", 0.565, float(work["legacy_qwk"]))
     add("Table7 thiswork/corrected", 0.574, float(work["corrected_qwk"]))
+
+    # --- E9b: per-grade score SD vs QWK (paper §5.4) ---
+    e9b = json.load(open(os.path.join(OUT, "e9b_grade_variance", "e9b_correlations.json"),
+                         encoding="utf-8"))
+    add("E9b SD vs ceiling QWK (Spearman)", 0.94, float(e9b["sd_vs_ceiling_spearman"]))
+    add("E9b SD vs model QWK (Spearman)", 0.71, float(e9b["sd_vs_model_spearman"]))
+
+    # --- E12 (supplementary): latest-model pilot, paper §5.4 ---
+    # Checked only when the pilot has been run (its ratings are key-gated); the
+    # within-sample ordering is the claim, not the absolute values.
+    e12_path = os.path.join(OUT, "e12_pilot", "e12_pilot_analysis.json")
+    if os.path.exists(e12_path):
+        p = json.load(open(e12_path, encoding="utf-8"))
+        add("E12 pilot latest-model vs expert (r)", 0.175, float(p["new_gpt_vs_human_pearson"]))
+        add("E12 pilot length vs expert (r)", 0.483, float(p["logwc_vs_human_pearson"]))
+        add("E12 pilot GPT-4o vs expert (r)", 0.197, float(p["old_gpt_vs_human_pearson"]))
+    else:
+        print("(E12 pilot: supplementary and not run — skipping its checks)")
 
     # --- report ---
     print(f"\n{'CHECK':<38}{'paper':>9}{'repro':>9}{'Δ':>9}   result")

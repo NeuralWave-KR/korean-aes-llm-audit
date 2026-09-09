@@ -2,11 +2,15 @@
 outputs/
 
 # --- AI-Hub-derived data: NOT redistributable (see README "Data") ---
-# raw essays, per-rater labels, splits (contain essay text), and GPT-4o ratings
+# raw essays, per-rater labels, splits (contain essay text), and model ratings
 # are all derived from the AI-Hub dataset and must be obtained under its terms.
 data/raw/
 data/splits/
 data/gpt4o_ratings/
+data/pilot_ratings/
+
+# --- API key for the supplementary pilot generation step (never commit) ---
+.env
 
 # --- python / env ---
 __pycache__/
