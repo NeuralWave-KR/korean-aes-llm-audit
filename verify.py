@@ -98,6 +98,10 @@ def main():
         add("E12 pilot latest-model vs expert (r)", 0.175, float(p["new_gpt_vs_human_pearson"]))
         add("E12 pilot length vs expert (r)", 0.483, float(p["logwc_vs_human_pearson"]))
         add("E12 pilot GPT-4o vs expert (r)", 0.197, float(p["old_gpt_vs_human_pearson"]))
+        add("E12 pilot latest-model partial | grade+length", 0.070,
+            float(p["new_gpt_partial_vs_human_given_grade_logwc"]))
+        add("E12 pilot GPT-4o partial | grade+length", 0.066,
+            float(p["old_gpt_partial_vs_human_given_grade_logwc"]))
     else:
         print("(E12 pilot: supplementary and not run — skipping its checks)")
 

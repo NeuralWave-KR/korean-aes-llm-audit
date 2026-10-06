@@ -12,9 +12,12 @@ separate, key-gated step; see src/preprocessing/pilot_rater.py and the README
 section "Supplementary: latest-model pilot". If the cached pilot ratings are not
 present, this stage skips (it is supplementary to Tables 1-7).
 
-Reported (paper §5.4):
+Reported (paper §5.4, Table 9):
   latest-model total vs expert total  Pearson 0.18
   < length 0.48 ; not above GPT-4o 0.20  -> surface features still dominate.
+  Controlling for surface features (grade level + log word count), the latest
+  model's partial correlation with expert scores falls to ~0.07 (GPT-4o likewise
+  ~0.07): the incremental signal is largely redundant with surface features.
 
 Caveats (documented in the paper): balanced sub-sample, so absolute QWK is NOT
 comparable to the headline numbers (only the within-sample ordering is); a single
@@ -49,12 +52,31 @@ def qwk(a, b):
 
 
 def partial_r(x, y, z):
-    """Partial correlation of x and y controlling for z."""
+    """Partial correlation of x and y controlling for a single covariate z."""
     from scipy.stats import pearsonr
     rxy = pearsonr(x, y)[0]
     rxz = pearsonr(x, z)[0]
     ryz = pearsonr(y, z)[0]
     return (rxy - rxz * ryz) / np.sqrt((1 - rxz ** 2) * (1 - ryz ** 2))
+
+
+def partial_r_multi(x, y, Z):
+    """Partial correlation of x and y controlling for the covariate columns in Z.
+
+    Residualize x and y on [intercept, Z] by ordinary least squares and correlate
+    the residuals. Z is a 2-D array (n_obs, n_covariates).
+    """
+    from scipy.stats import pearsonr
+    Z = np.asarray(Z, float)
+    if Z.ndim == 1:
+        Z = Z[:, None]
+    design = np.column_stack([np.ones(len(x)), Z])
+
+    def resid(v):
+        beta, *_ = np.linalg.lstsq(design, np.asarray(v, float), rcond=None)
+        return np.asarray(v, float) - design @ beta
+
+    return float(pearsonr(resid(x), resid(y))[0])
 
 
 def main():
@@ -73,13 +95,16 @@ def main():
     new = (r[["essay_id", "llm_total_score", "model"]]
            .rename(columns={"llm_total_score": "new_gpt_total"})
            .dropna(subset=["new_gpt_total"]))
-    sample = pd.read_csv(PILOT_SAMPLE)[["essay_id", "total_score"]]
+    sample = pd.read_csv(PILOT_SAMPLE)[["essay_id", "grade_level", "total_score"]]
 
     d = (sample.merge(new, on="essay_id")
          .merge(old, on="essay_id", how="left")
          .merge(test[["essay_id", "essay_txt"]], on="essay_id")
          .dropna(subset=["new_gpt_total", "old_gpt_total"]))
     d["logwc"] = np.log1p(d["essay_txt"].fillna("").str.split().str.len())
+    # surface-feature controls: log word count + grade-level dummies (drop first)
+    grade_dummies = pd.get_dummies(d["grade_level"], prefix="g", drop_first=True)
+    surface = np.column_stack([d["logwc"].values, grade_dummies.values.astype(float)])
 
     res = {
         "model": str(new["model"].iloc[0]),
@@ -92,6 +117,10 @@ def main():
         "old_gpt_vs_human_qwk": qwk(d["total_score"], d["old_gpt_total"]),
         "new_gpt_partial_vs_human_given_logwc": float(partial_r(
             d["new_gpt_total"].values, d["total_score"].values, d["logwc"].values)),
+        "new_gpt_partial_vs_human_given_grade_logwc": partial_r_multi(
+            d["new_gpt_total"].values, d["total_score"].values, surface),
+        "old_gpt_partial_vs_human_given_grade_logwc": partial_r_multi(
+            d["old_gpt_total"].values, d["total_score"].values, surface),
     }
 
     out = os.path.join(OUT_DIR, "e12_pilot_analysis.json")
@@ -100,6 +129,8 @@ def main():
     print(f"  latest-model vs expert   Pearson {res['new_gpt_vs_human_pearson']:.3f}")
     print(f"  length (log wc) vs expert Pearson {res['logwc_vs_human_pearson']:.3f}")
     print(f"  GPT-4o vs expert         Pearson {res['old_gpt_vs_human_pearson']:.3f}")
+    print(f"  latest-model partial | grade+length  {res['new_gpt_partial_vs_human_given_grade_logwc']:.3f}")
+    print(f"  GPT-4o partial       | grade+length  {res['old_gpt_partial_vs_human_given_grade_logwc']:.3f}")
     print(f"  -> {out}")
 
 

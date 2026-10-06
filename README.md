@@ -19,7 +19,7 @@ time.
 | `e11_honest_eval.py`    | `e11_honest_eval/`       | Table 5 · representative QWK **0.581** |
 | `tables_6_7.py`         | `tables_6_7/`            | Table 6 (per-grade + CI) · Table 7 (gap decomposition) |
 | `e9b_grade_variance.py` | `e9b_grade_variance/`    | §5.4 · per-grade score SD vs QWK: Spearman ρ **0.94** (ceiling), **0.71** (model) |
-| `e12_pilot_latest_model.py` | `e12_pilot/`         | §5.4 · supplementary latest-model pilot (GPT-5.6): expert-agreement r **0.18** < length **0.48** |
+| `e12_pilot_latest_model.py` | `e12_pilot/`         | §5.4 · supplementary latest-model pilot (GPT-5.6): expert-agreement r **0.18** < length **0.48**; partial r \| grade+length **0.07** |
 
 `verify.py` checks each regenerated number against the value reported in the
 paper and exits non-zero on any mismatch.
@@ -127,6 +127,10 @@ re-scored with a recent model (**GPT-5.6**, id `gpt-5.6-sol`) using the *same*
   latest-model total agrees with the expert total at Pearson **0.175**, below a
   trivial length feature (log word count, **0.483**) and not above GPT-4o
   (**0.197**) — the same ordering the paper reports for GPT-4o.
+- **Surface-feature control** (Table 9): controlling for grade level and log word
+  count (OLS residualization), the latest model's partial correlation with the
+  expert total falls to **0.070** (GPT-4o likewise **0.066**) — the incremental
+  signal beyond surface features is near zero and largely redundant with them.
 - **Caveats** (as stated in §5.4): a *balanced* sub-sample, so absolute QWK is
   not comparable to the headline numbers — only the within-sample ordering is; a
   single recent model; and GPT-5.6 does not support `temperature=0`, so scoring
