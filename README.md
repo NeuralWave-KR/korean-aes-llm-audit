@@ -2,24 +2,21 @@
 
 Reproduction package for the paper *"Surface Features, Not the LLM: A Validity
 Audit of an LLM-as-a-Judge Korean Essay Scoring Pipeline."* It regenerates every
-quantitative result in the paper (Tables 1–7 and the headline QWK values) from
+quantitative result in the paper (Tables 1–9 and the headline QWK values) from
 cached model inputs, with **no network access and no LLM API calls** at analysis
 time.
-
-> Anonymized for double-blind review. No author names or affiliations appear in
-> this repository.
 
 ## What it reproduces
 
 | Stage (`src/`)          | Outputs (`outputs/`)     | Paper                                   |
 |-------------------------|--------------------------|-----------------------------------------|
-| `e09_human_ceiling.py`  | `e9_human_ceiling/`      | Tables 1–2 · human ceiling QWK **0.584** |
+| `e09_human_ceiling.py`  | `e9_human_ceiling/`      | Tables 1–2 · human ceiling QWK **0.584**; pairwise/one-vs-rest ceilings for Table 8 |
 | `e10_factorial.py`      | `e10_factorial/`         | Tables 3–4 · H2 (LLM increment) **+0.005 [−0.023, +0.032]**; Bonferroni 98.75% CIs (M=4) |
 | `e7l_original.py`       | `e7l_original/`          | Audited original pipeline · **0.625** (test-selected) |
-| `e11_honest_eval.py`    | `e11_honest_eval/`       | Table 5 · representative QWK **0.581** |
+| `e11_honest_eval.py`    | `e11_honest_eval/`       | Table 5 · representative QWK **0.581** (also the model row of Table 8) |
 | `tables_6_7.py`         | `tables_6_7/`            | Table 6 (per-grade + CI) · Table 7 (gap decomposition) |
 | `e9b_grade_variance.py` | `e9b_grade_variance/`    | §5.4 · per-grade score SD vs QWK: Spearman ρ **0.94** (ceiling), **0.71** (model) |
-| `e12_pilot_latest_model.py` | `e12_pilot/`         | §5.4 · supplementary latest-model pilot (GPT-5.6): expert-agreement r **0.18** < length **0.48**; partial r \| grade+length **0.07** |
+| `e12_pilot_latest_model.py` | `e12_pilot/`         | §5.4 · Table 9 · supplementary latest-model pilot (GPT-5.6): expert-agreement r **0.18** < length **0.48**; partial r \| grade+length **0.07** |
 
 `verify.py` checks each regenerated number against the value reported in the
 paper and exits non-zero on any mismatch.
