@@ -6,6 +6,9 @@ quantitative result in the paper (Tables 1–9 and the headline QWK values) from
 cached model inputs, with **no network access and no LLM API calls** at analysis
 time.
 
+**Authors:** Seunghun Ma (마승훈, corresponding author), Sanguk Ma (마상욱) — NeuralWave Co., Ltd.
+Accepted for publication in *KIPS Transactions on Software and Data Engineering*, 2026.
+
 ## What it reproduces
 
 | Stage (`src/`)          | Outputs (`outputs/`)     | Paper                                   |
